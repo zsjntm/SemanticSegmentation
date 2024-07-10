@@ -6,8 +6,8 @@ cityscapes:
 
 voc2012:
     <p>&emsp;train:</p>
-        <p>&emsp;&emsp;input_images</p>
-        <p>&emsp;&emsp;label_images</p>
+        <p>&emsp;&emsp;input_images: 1464张图片</p>
+        <p>&emsp;&emsp;label_images: 1464张图片</p>
     <p>&emsp;val:</p>
-        <p>&emsp;&emsp;input_images</p>
-        <p>&emsp;&emsp;label_images</p>
+        <p>&emsp;&emsp;input_images: 1449张图片</p>
+        <p>&emsp;&emsp;label_images: 1449张图片</p>
