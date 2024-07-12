@@ -32,6 +32,7 @@ class TrainTransformV1:
     def __call__(self, img, target):
         return self.transform(img, target)
 
+
 class TrainTransformV2:
     def __init__(self, size, mean, std, scale=(0.08, 1), ratio=(3 / 4, 4 / 3), rotation_range=10, flip_p=0.5):
         self.transform = Compose([
@@ -41,6 +42,28 @@ class TrainTransformV2:
             RandomHorizontalFlip(flip_p),
             ToDtype(torch.float32, torch.int64),
             Normalize(mean, std)
+        ])
+
+    def __call__(self, img, target):
+        return self.transform(img, target)
+
+
+class TrainTransformV3:
+    def __init__(self, size, mean, std, scale_range, fill_value, rotation_range=10, flip_p=0.5):
+        """
+        :param size: (h, w)
+        :param scale_range: [low_scale_factor, high_scale_factor)
+        :param fill_value: 标签的填充值
+        """
+        self.transform = Compose([
+            ToImage(),
+            RandomResize(scale_range),
+            Pad2Dsize(size, fill_value),
+            RandomCrop(size),
+            RandomRotation(rotation_range, fill_value),
+            RandomHorizontalFlip(flip_p),
+            ToDtype(torch.float32, torch.int64),
+            Normalize(mean, std),
         ])
 
     def __call__(self, img, target):
