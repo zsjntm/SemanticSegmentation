@@ -36,8 +36,11 @@ class RandomHorizontalFlip:
 
 
 class RandomRotation:
-    def __init__(self, rotation_range=10):
-        v2.RandomRotation
+    def __init__(self, rotation_range=10, fill_value=255):
+        """
+        :param fill_value: 标签的填充值
+        """
+        self.fill_value = fill_value
         if type(rotation_range) is int:
             rotation_range = (-rotation_range, rotation_range)
         self.rotation_range = rotation_range
@@ -45,7 +48,7 @@ class RandomRotation:
     def __call__(self, img, target):
         rotation = np.random.uniform(*self.rotation_range)
         img = v2.functional.rotate(img, rotation, v2.InterpolationMode.BILINEAR)
-        target = v2.functional.rotate(target, rotation, v2.InterpolationMode.NEAREST, fill=255)
+        target = v2.functional.rotate(target, rotation, v2.InterpolationMode.NEAREST, fill=self.fill_value)
         return img, target
 
 
@@ -61,6 +64,53 @@ class Resize:
         img = self.resize_img(img)
         target = self.resize_target(target)
         return img, target
+
+class RandomResize:
+    def __init__(self, scale_range=(0.5, 2.1)):
+        """
+        :param scale_range: [low_scale_factor, high_scale_factor)
+        """
+        self.scale_range = scale_range
+
+    def __call__(self, img, target):
+        _, h, w = img.shape
+        factor = np.random.uniform(*self.scale_range)
+        h, w = int(h * factor), int(w * factor)
+        img = v2.functional.resize(img, (h, w), antialias=True)
+        target = v2.functional.resize(target, (h, w), interpolation=v2.InterpolationMode.NEAREST)
+        return img, target
+
+class Pad2Dsize:
+    def __init__(self, dsize, fill_value=255):
+        """
+        将img，target不满dsize的边填充到dsize的长度
+        :param dsize: (h, w)
+        :param fill_value: 标签的填充值
+        """
+        self.dsize = dsize
+        self.fill_value = fill_value
+
+    def __call__(self, img, target):
+        _, h, w = img.shape
+        pad_h, pad_w = max(self.dsize[0] - h, 0), max(self.dsize[1] - w, 0)
+        if pad_h > 0 or pad_w > 0:
+            img = v2.functional.pad(img, (0, 0, pad_w, pad_h), fill=0)
+            target = v2.functional.pad(target, (0, 0, pad_w, pad_h), fill=self.fill_value)
+        return img, target
+
+class RandomCrop:
+    def __init__(self, crop_size):
+        """
+        :param crop_size: (h, w)
+        """
+        self.crop_size = crop_size
+
+    def __call__(self, img, target):
+        top, left, h, w = v2.RandomCrop.get_params(img, self.crop_size)
+        img = v2.functional.crop(img, top, left, h, w)
+        target = v2.functional.crop(target, top, left, h, w)
+        return img, target
+
 
 
 class RandomResizedCrop:
