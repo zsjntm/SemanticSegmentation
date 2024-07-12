@@ -13,7 +13,7 @@ VOC2012_DEFAULT = {
     'wd': 0,
     'lr_scheduler': 'none',
     'ls_args': 0,
-    'val_interval': 5,
+    'val_interval': 3,
 }  # R18系列的分割网络，在voc2012上训练用这个，bsize大到跑满GPU，nw大到内存不爆，epoch随意
 
 CITYSCAPES_DEFAULT = {
@@ -28,6 +28,58 @@ CITYSCAPES_DEFAULT = {
     'ls_args': 0,
     'val_interval': 5,
 }  # R18系列的分割网络，在cityscapes上训练用这个，bsize大到跑满GPU，nw大到内存不爆，epoch随意
+
+# 一个recipe分为两个阶段，两个一起用
+CITYSCAPES_DAD_STAGE1 = {
+    'dataset': 'cityscapes_train_recipe3',
+    'evaluator': 'cityscapes_val_cce',
+    'eval_bsize_nw': [20, 1],
+    'optimizer': 'SGD',
+    'lr': 0.01,
+    'momentum': 0.9,
+    'wd': 5e-4,
+    'lr_scheduler': 'DAD',
+    'ls_args': [120032, 0.9],
+    'val_interval': 5,
+}  # R18系列在cityscapes上要实现sota性能的recipe。stage1: bsize=12, epoch=384, nw大到内存不爆
+CITYSCAPES_DAD_STAGE2 = {
+    'dataset': 'cityscapes_train_recipe3',
+    'evaluator': 'cityscapes_val_cce',
+    'eval_bsize_nw': [20, 1],
+    'optimizer': 'SGD',
+    'lr': 0.01,
+    'momentum': 0.9,
+    'wd': 5e-4,
+    'lr_scheduler': 'DAD',
+    'ls_args': [120032, 0.9],
+    'val_interval': 1,
+}  # stage2: bsize=12, epoch=100, nw大到内存不爆
+
+# 一个recipe分为两个阶段，两个一起用
+CITYSCAPES_DADV2_STAGE1 = {
+    'dataset': 'cityscapes_train_dadv2',
+    'evaluator': 'cityscapes_val_cce',
+    'eval_bsize_nw': [20, 1],
+    'optimizer': 'SGD',
+    'lr': 0.01,
+    'momentum': 0.9,
+    'wd': 5e-4,
+    'lr_scheduler': 'DAD',
+    'ls_args': [120032, 0.9],
+    'val_interval': 5,
+}  # R18系列在cityscapes上要实现sota性能的recipe。stage1: bsize=12, epoch=384, nw大到内存不爆
+CITYSCAPES_DADV2_STAGE2 = {
+    'dataset': 'cityscapes_train_dadv2',
+    'evaluator': 'cityscapes_val_cce',
+    'eval_bsize_nw': [20, 1],
+    'optimizer': 'SGD',
+    'lr': 0.01,
+    'momentum': 0.9,
+    'wd': 5e-4,
+    'lr_scheduler': 'DAD',
+    'ls_args': [120032, 0.9],
+    'val_interval': 1,
+}  # stage2: bsize=12, epoch=100, nw大到内存不爆
 
 
 def train(model_dir, checkpoint, bsize, nw, epoch, recipe, lf='cce', lf_args=[255, 0],
