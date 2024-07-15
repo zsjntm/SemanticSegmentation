@@ -7,6 +7,14 @@ except:
 
 
 class Cityscapes(BaseDataset):
+    cls_n = 19
+    border_index = 255
+    class_weight = [0.8373, 0.918, 0.866, 1.0345,
+                    1.0166, 0.9969, 0.9754, 1.0489,
+                    0.8786, 1.0023, 0.9539, 0.9843,
+                    1.1116, 0.9037, 1.0865, 1.0955,
+                    1.0865, 1.1529, 1.0507]
+
     def __init__(self, root, split='train', transform=None):
         super(Cityscapes, self).__init__(transform)
 
@@ -22,9 +30,6 @@ class Cityscapes(BaseDataset):
                 # print(img, target)
                 self.imgs.append(img)
                 self.targets.append(target)
-
-        self.cls_n = 19
-        self.border_index = 255
 
 
 if __name__ == '__main__':
