@@ -59,7 +59,7 @@ CITYSCAPES_DAD_STAGE2 = {
 CITYSCAPES_DADV2_STAGE1 = {
     'dataset': 'cityscapes_train_dadv2',
     'evaluator': 'cityscapes_val_cce',
-    'eval_bsize_nw': [20, 1],
+    'eval_bsize_nw': [10, 10],
     'optimizer': 'SGD',
     'lr': 0.01,
     'momentum': 0.9,
@@ -71,7 +71,7 @@ CITYSCAPES_DADV2_STAGE1 = {
 CITYSCAPES_DADV2_STAGE2 = {
     'dataset': 'cityscapes_train_dadv2',
     'evaluator': 'cityscapes_val_cce',
-    'eval_bsize_nw': [20, 1],
+    'eval_bsize_nw': [10, 10],
     'optimizer': 'SGD',
     'lr': 0.01,
     'momentum': 0.9,
