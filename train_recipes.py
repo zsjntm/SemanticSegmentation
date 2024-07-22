@@ -82,8 +82,10 @@ CITYSCAPES_DADV2_STAGE2 = {
 }  # stage2: bsize=12, epoch=100, nw大到内存不爆
 
 
-def train(model_dir, checkpoint, bsize, nw, epoch, recipe, lf='cce', lf_args=[255, 0],
+def train(model_dir, checkpoint, bsize, nw, epoch, recipe, lf='cce', lf_args=[255, 0, 0, 0, 0, -1, 0],
           device='cuda', verbose=1):
+    """默认在cuda:0上训，并且不用ohem和class_weights"""
+
     def lis2str(lis):
         """
         将[1, 2, 0.3, ...] -> '1 2 0.3 ...'
@@ -123,7 +125,7 @@ def train(model_dir, checkpoint, bsize, nw, epoch, recipe, lf='cce', lf_args=[25
         )
     )
     command2 = recipe2str(recipe)
-    os.system(command + ' ' + command2)
+    os.system(command + command2)
 
 
 if __name__ == '__main__':
