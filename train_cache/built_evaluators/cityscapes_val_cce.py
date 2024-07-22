@@ -4,7 +4,7 @@ from train_cache.built_losses import cce
 
 def build_evaluator(bsize=25, num_workers=1):
     dataset = cityscapes_val.build()
-    lf = cce.build_loss(dataset.border_index, 1)
+    lf = cce.build_loss(dataset.border_index, 1, 0, 0, 0, -1, 0)
     return SemanticSegmentationEvaluator(dataset, lf, bsize, num_workers)
 
 if __name__ == '__main__':

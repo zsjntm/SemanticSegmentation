@@ -206,7 +206,7 @@ if __name__ == '__main__':
 
     evaluator = voc2012_val_cce.build_evaluator()
 
-    from train_cache.built_losses import cce
+    # from train_cache.built_losses import cce
 
     lf = cce.build_loss(dataset.border_index, 0)
 

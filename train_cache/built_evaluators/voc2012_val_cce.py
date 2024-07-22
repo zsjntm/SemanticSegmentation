@@ -5,7 +5,7 @@ from train_cache.built_losses import cce
 
 def build_evaluator(bsize=300, num_workers=1):
     dataset = voc2012_val.build()
-    lf = cce.build_loss(dataset.border_index, 1)
+    lf = cce.build_loss(dataset.border_index, 1, 0, 0, 0, -1, 0)
 
     evaluator = SemanticSegmentationEvaluator(dataset, lf, bsize, num_workers)
     return evaluator
