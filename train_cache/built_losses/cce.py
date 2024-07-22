@@ -1,42 +1,35 @@
-import torch.nn.functional as F
-
-
-class Cross_Entorpy:
-    def __init__(self, ignore_index=-100, reduction='mean'):
-        """
-        :param ignore_index: 这里的默认值为F.cross_entropy的ignore_index的默认值
-        :param reduction: 这里的默认值为F.cross_entropy的reduction的默认值
-        """
-        self.ignore_index = ignore_index
-        self.reduction = reduction
-
-    def __call__(self, outputs, targets):
-        """
-        :param outputs: (b, cls_n, h, w) logits
-        :param targets: (b, 1, h, w) indices
-        :return:
-        """
-        outputs = outputs.permute(0, 2, 3, 1).contiguous().view(-1, outputs.shape[-3])  # (b * h * w, cls_n)
-        targets = targets.flatten().contiguous()  # (b * h * w, )
-        loss = F.cross_entropy(outputs, targets, ignore_index=self.ignore_index, reduction=self.reduction)
-        return loss
-
+from losses.loss_functions import SSCrossEntropy
+from datasets.cityscapes import Cityscapes
+import numpy as np
 
 def build_loss(*args):
     """
-    args[0]: ignore_index
-    args[1]: reduction 0->'mean', 1->'sum'
+    :param args[0]: ignore_idx
+    :param args[1]: reduction: 0->'mean' 1->'sum'
+    :param args[2]: ohem 0->不用 1->使用
+    :param args[3]: thres_p: 概率低于该值的被认为难样本, 仅在开启ohem时有效
+    :param args[4]: min_kept, 仅在开启ohem时有效
+    :param args[5]: class_weights -1->不用, 1->用cityscapes的
+    :param args[6]: -1->'cpu', i>=0->'cuda:i'
     """
-    ignore_index = int(args[0])  # float->int
 
-    assert args[1] == 0 or args[1] == 1
-    reduction = 'mean' if args[1] == 0 else 'sum'  # 0 -> 'mean', 1 -> 'sum'
+    ignore_idx = int(args[0])
 
-    cce = Cross_Entorpy(ignore_index, reduction)
-    return cce
+    reduction = 'mean' if args[1] == 0 else 'sum'
 
+    if args[2] == 0:
+        ohem = None
+    else:
+        thres = -np.log(args[3])
+        ohem = (thres, args[4])
 
-if __name__ == '__main__':
-    loss = build_loss(*[255., 1.])
-    print(loss.ignore_index)
-    print(loss.reduction)
+    if args[5] == -1:
+        class_weights = None
+    elif args[5] == 1:
+        class_weights = Cityscapes.class_weight
+
+    device = 'cuda:{}'.format(args[6]) if args[6] >= 0 else 'cpu'
+
+    lf = SSCrossEntropy(ignore_idx, reduction, ohem, class_weights, device)
+    return lf
+
