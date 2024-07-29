@@ -112,20 +112,36 @@ class PPM(nn.Module):
 
 
 class BasicBlock(nn.Module):
-    """Res18的恒等形状输出block，可以不要最终的relu激活"""
+    """Res18的block，可以不要最终的relu激活，可以二倍下采样, 与torch的BasicBlock同步"""
 
-    def __init__(self, channels, output_relu=False):
+    def __init__(self, channels, output_relu=False, downsample=False, in_channels=None):
         super().__init__()
-        self.conv1 = nn.Conv2d(channels, channels, 3, 1, 1, bias=False)
+        if in_channels is None:
+            in_channels = channels
+
+        self.conv1 = nn.Conv2d(in_channels, channels, 3, 1, 1, bias=False)
         self.bn1 = nn.BatchNorm2d(channels)
         self.relu = nn.ReLU(True)
         self.conv2 = nn.Conv2d(channels, channels, 3, 1, 1, bias=False)
         self.bn2 = nn.BatchNorm2d(channels)
+        if downsample == True:
+            self.downsample = nn.Sequential(
+                nn.Conv2d(in_channels, channels, 1, 2, bias=False),
+                nn.BatchNorm2d(channels),
+            )
+            self.conv1.stride = 2
+        else:
+            self.downsample = None
 
         self.output_relu = output_relu
 
     def forward(self, x):
-        x = self.bn2(self.conv2(self.relu(self.bn1(self.conv1(x))))) + x
+        if self.downsample is not None:
+            residual = self.downsample(x)
+        else:
+            residual = x
+
+        x = self.bn2(self.conv2(self.relu(self.bn1(self.conv1(x))))) + residual
         if self.output_relu:
             return self.relu(x)
         else:
@@ -162,3 +178,21 @@ if __name__ == '__main__':
     # x = torch.rand(3, 512, 7, 7)
     # print(ppm)
     # print(ppm(x).shape)
+
+    "BasicBlock"
+    # import torchvision
+    #
+    # r18 = torchvision.models.resnet18()
+    # print(r18)
+    #
+    # BBD = BasicBlock(64, True)
+    # print(BBD)
+    # x = torch.rand(3, 64, 56, 56)
+    # y = BBD(x)
+    # print(y.shape)
+    #
+    # BBD = BasicBlock(128, True, True, 64)
+    # print(BBD)
+    # x = torch.rand(3, 64, 56, 56)
+    # y = BBD(x)
+    # print(y.shape)

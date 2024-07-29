@@ -28,7 +28,7 @@ def build_loss(*args):
     """
 
 
-    lf_final = new_cce.build_loss(*args[:7])
+    lf_final = cce.build_loss(*args[:7])
 
     ignore_idx = int(args[7])
     reduction = 'mean' if args[8] == 0 else 'sum'
