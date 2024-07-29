@@ -1,8 +1,11 @@
 from train_cache.built_losses import cce
 from losses.loss_functions import weighted_bce
+from losses.loss_functions import SSCrossEntropy
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 
 class Target2BDTarget:
     """用来生成细节引导的标签，生成的标签为二值，dtype为float32"""
@@ -55,46 +58,65 @@ class Target2BDTarget:
 
 
 class Loss:
-    def __init__(self, lf_final, lf_detail, detail_weight, device):
-        self.lf_final = lf_final
+    def __init__(self, lf, lf_aux, lf_detail, aux_weight, detail_weight, device):
+        self.lf = lf
+        self.lf_aux = lf_aux
         self.lf_detail = lf_detail
+        self.aux_weight = aux_weight
         self.detail_weight = detail_weight
-        self.t2bdt = Target2BDTarget(device)
-        self.device = device
+        self.ss2bd = Target2BDTarget(device)
 
     def __call__(self, outputs, targets):
         """
-        :param outputs: (final_outputs, detail_outputs)
-        :param targets: targets
-        :return: loss值
+        :param outputs: (final_seg, aux_seg, detail_seg)
         """
 
-        loss_final = self.lf_final(outputs[0], targets)
+        loss_final = self.lf(outputs[0], targets)
+        loss_aux = self.lf_aux(outputs[1], targets)
+        bd_targets = self.ss2bd(targets)
+        loss_detail = self.lf_detail(outputs[2], bd_targets)
 
-        bd_targets = self.t2bdt(targets)  # (b, 1, h, w) float32 只有0，1两个值
-        loss_detail = self.lf_detail(outputs[1], bd_targets)
+        return loss_final + loss_aux * self.aux_weight + loss_detail * self.detail_weight
 
-        return loss_final + self.detail_weight * loss_detail
 
 def build_loss(*args):
     """
     :param args[0~6]: cce的build_loss所需的参数
-    :param args[7]: detail_loss的detail_weight
-    :param args[8]: detail_loss的device: -1->'cpu' i>=0->'cuda:i'
+    :param args[7]: aux_loss的ignore_idx
+    :param args[8]: aux_loss的reduction: 0->'mean' 1->'sum'
+    :param args[9]: aux_loss的aux_weight
+    :param args[10]: detail_loss的detail_weight
+    :param args[11]: detail_loss的device: -1->'cpu' i>=0->'cuda:i'
     """
 
     lf_final = cce.build_loss(*args[:7])
 
-    lf_detail = weighted_bce
-    detail_weight = args[7]
-    device = 'cuda:{}'.format(int(args[8])) if args[8] >= 0 else 'cpu'
+    ignore_idx = int(args[7])
+    reduction = 'mean' if args[8] == 0 else 'sum'
+    aux_weight = args[9]
+    lf_aux = SSCrossEntropy(ignore_idx, reduction)
 
-    lf = Loss(lf_final, lf_detail, detail_weight, device)
-    return lf
+    lf_detail = weighted_bce
+    detail_weight = args[10]
+    device = 'cuda:{}'.format(int(args[11])) if args[11] >= 0 else 'cpu'
+    return Loss(lf_final, lf_aux, lf_detail, aux_weight, detail_weight, device)
 
 
 if __name__ == '__main__':
-    outputs = (torch.rand(3,19,224,224), torch.rand(3,1,224,224))
-    loss = build_loss(255, 0, 0, 0, 0, -1, -1, 1, -1)
-    targets = torch.randint(0, 19, (3,1,224,224)).type(torch.int64)
+    from tools.model_tools import load_model
+
+    model = load_model(r'../built_models/cityscapes_models/sota/eudr1_64x_aux_dg')
+
+    from train_cache.built_datasets import cityscapes_train_recipe1
+
+    dataset = cityscapes_train_recipe1.build()
+    from torch.utils.data import DataLoader
+    dataloader = DataLoader(dataset, 3)
+    for imgs, targets in dataloader:
+        break
+    imgs, targets = imgs.to('cuda'), targets.to('cuda')
+
+    model.train().to('cuda')
+    outputs = model(imgs)
+    loss = build_loss(255, 0, 1, 0.9, 131072, -1, 0, 255, 0, 1, 1, 0)
     print(loss(outputs, targets))
